@@ -1,5 +1,6 @@
 
 var ko = require('../vendor/js/knockout-2.2.1');
+var $ = require('../vendor/js/jquery-2.0.0.min');
 
 
 // Will be loaded from config
@@ -13,6 +14,7 @@ var CommandLineViewModel = function(path) {
     this.path = path;
     this.hasFocus = ko.observable(true);
     this.command = ko.observable();
+    $(document).keypress(function() { self.hasFocus(true); });
 }
 exports.CommandLineViewModel = CommandLineViewModel;
 CommandLineViewModel.prototype.template = 'commandLine';
