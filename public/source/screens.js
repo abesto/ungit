@@ -4,6 +4,7 @@ var ProgressBarViewModel = require('./controls').ProgressBarViewModel;
 var RepositoryViewModel = require('./repository').RepositoryViewModel;
 var addressParser = require('../../source/address-parser');
 var signals = require('signals');
+var CommandLineViewModel = require('./commandLine').CommandLineViewModel;
 
 function HomeViewModel(app) {
 	this.repos = app.visitedRepositories().map(function(path) {
@@ -52,6 +53,7 @@ var PathViewModel = function(app, path) {
 	});
 	this.cloneDestination = ko.observable();
 	this.repository = ko.observable();
+	this.commandLine = ko.observable(new CommandLineViewModel(this));
 }
 exports.PathViewModel = PathViewModel;
 PathViewModel.prototype.template = 'path';

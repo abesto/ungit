@@ -55,9 +55,11 @@
 	</div>
 	<!-- /ko -->
 
+	<div data-bind="template: { name: 'commandLine', data: commandLine }">
+	</div>
+
 	<!-- ko if: repository -->
 	<div data-bind="template: { name: 'repository', data: repository }">
 	</div>
 	<!-- /ko -->
-
 </div>
