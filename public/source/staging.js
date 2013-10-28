@@ -176,6 +176,12 @@ StagingViewModel.prototype.toogleAllStages = function() {
 	}
 	self.allStageFlag = !self.allStageFlag
 }
+StagingViewModel.prototype.submit = function() {
+	if (this.commitValidationError()) return;
+	if (this.commitButtonVisible()) return this.commit();
+	if (this.inRebase()) return this.rebaseContinue();
+	if (this.inMerge()) return this.mergeContinue();
+}
 
 var FileViewModel = function(staging) {
 	var self = this;
