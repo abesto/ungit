@@ -55,6 +55,8 @@ CommandLineViewModel.prototype.show = function(command) {
     }
 }
 CommandLineViewModel.prototype.show.push = function() {
-    var graph = this.path.repository().graph;
-    graph.hoverGraphAction(graph.currentActionContext().node().dropareaGraphActions[3]);
+    // TODO: don't do anything if can't push
+    var graph = this.path.repository().graph,
+                push = graph.currentActionContext().node().dropareaGraphActions[3];
+    if (push.visible()) graph.hoverGraphAction(push);
 }
