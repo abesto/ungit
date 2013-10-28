@@ -1,4 +1,6 @@
-// Big todo: graph node hasFocus vs. commandLine hasFocus
+// Big TODO: graph node hasFocus vs. commandLine hasFocus
+// TODO: commit message body vs. commandLine hasFocus
+// TODO: document keypress -> commandLine entry doesn't trigger command update -> doesn't trigger valid update
 var ko = require('../vendor/js/knockout-2.2.1');
 var $ = require('../vendor/js/jquery-2.0.0.min');
 
