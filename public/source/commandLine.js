@@ -15,6 +15,11 @@ var CommandLineViewModel = function(path) {
     this.path = path;
     this.hasFocus = ko.observable(true);
     this.command = ko.observable();
+    this.valid = ko.computed(function() {
+        var command = this.applyAliases(this.command());
+        if (this.check[command]) return this.check[command].call(this);
+        return !!this[command];
+    }, this);
     $(document).keypress(function() { self.hasFocus(true); });
     this.command.subscribe(this.show, this);
 }
@@ -48,8 +53,9 @@ CommandLineViewModel.prototype.show = function(command) {
         graph.checkedOutRef().hasFocus(true);
     }
     command = this.applyAliases(this.command());
+
     if (this.show[command]) {
-        this.show[command].call(this);   
+        this.show[command].call(this);
     } else {
         graph.hoverGraphAction(null);
     }
@@ -58,5 +64,9 @@ CommandLineViewModel.prototype.show.push = function() {
     // TODO: don't do anything if can't push
     var graph = this.path.repository().graph,
                 push = graph.currentActionContext().node().dropareaGraphActions[3];
-    if (push.visible()) graph.hoverGraphAction(push);
+    if (this.check.push.call(this)) graph.hoverGraphAction(push);
+}
+CommandLineViewModel.prototype.check = {};
+CommandLineViewModel.prototype.check.push = function() {
+    return this.path.repository().graph.currentActionContext().node().dropareaGraphActions[3].visible();
 }
