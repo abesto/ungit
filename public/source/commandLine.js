@@ -1,6 +1,3 @@
-// Big TODO: graph node hasFocus vs. commandLine hasFocus
-// TODO: commit message body vs. commandLine hasFocus
-// TODO: document keypress -> commandLine entry doesn't trigger command update -> doesn't trigger valid update
 var ko = require('../vendor/js/knockout-2.2.1');
 var $ = require('../vendor/js/jquery-2.0.0.min');
 
@@ -15,15 +12,29 @@ var aliases = {
 var CommandLineViewModel = function(path) {
     var self = this;
     this.path = path;
-    this.hasFocus = ko.observable(true);
     this.command = ko.observable();
     this.valid = ko.computed(function() {
         var command = this.applyAliases(this.command());
+        this.show(command);
         if (this.check[command]) return this.check[command].call(this);
         return !!this[command];
     }, this);
-    $(document).keypress(function() { self.hasFocus(true); });
-    this.command.subscribe(this.show, this);
+    $(document).keypress(function(e) { 
+        // Don't refocus if we're in a text input box
+        var activeElement = document.activeElement,
+            $commandLine = $('.command-line');
+        if (activeElement.nodeName == 'TEXTAREA') return;
+        if (activeElement.nodeName == 'INPUT' && activeElement.type == 'text') return;
+        // The command line will get the character pressed, but obervables
+        // won't be updated, since there's no keydown event
+        $commandLine.focus();
+        // After the command line gets the initial character, force an update
+        // (needed to handle single-character aliases)
+        setTimeout(function() { 
+            self.command($commandLine.val());
+            self.command.valueHasMutated(); 
+        }, 0);
+    });
 }
 exports.CommandLineViewModel = CommandLineViewModel;
 CommandLineViewModel.prototype.template = 'commandLine';
@@ -50,9 +61,13 @@ CommandLineViewModel.prototype.push = function() {
     this.path.repository().graph.checkedOutRef().node().dropareaGraphActions[3].doPerform()
 }
 CommandLineViewModel.prototype.show = function(command) {
-    var graph = this.path.repository().graph;
+    var repository = this.path.repository(),
+        graph;
+    if (!repository) return false;
+    graph = repository.graph;
+    if (!graph.checkedOutRef()) return false;
     if (!graph.currentActionContext()) {
-        graph.checkedOutRef().hasFocus(true);
+        graph.checkedOutRef().selected(true);
     }
     command = this.applyAliases(this.command());
 
@@ -61,6 +76,8 @@ CommandLineViewModel.prototype.show = function(command) {
     } else {
         graph.hoverGraphAction(null);
     }
+
+    return true;
 }
 CommandLineViewModel.prototype.show.push = function() {
     // TODO: don't do anything if can't push
