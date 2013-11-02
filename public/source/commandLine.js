@@ -12,12 +12,23 @@ var aliases = {
 var CommandLineViewModel = function(path) {
     var self = this;
     this.path = path;
-    this.command = ko.observable();
+    this.commandLine = ko.observable();
+    this.command = ko.computed({
+        read: function() { return this.applyAliases(this.commandLine()); },
+        write: function(cmd) { this.commandLine(cmd); },
+        owner: this
+    });
+    this.command.subscribe(this.show, this);
     this.valid = ko.computed(function() {
-        var command = this.applyAliases(this.command());
-        this.show(command);
-        if (this.check[command]) return this.check[command].call(this);
-        return !!this[command];
+        return this.check(this.command());
+    }, this);
+    this.currentActionContext = ko.computed(function() {
+        if (!this.path.repository()) return null;
+        return this.path.repository().graph.currentActionContext();
+    }, this);
+    this.graph = ko.computed(function() {
+        if (!this.path.repository()) return null;
+        return this.path.repository().graph;
     }, this);
     $(document).keypress(function(e) {
         // Don't refocus if we're in a text input box
@@ -31,8 +42,8 @@ var CommandLineViewModel = function(path) {
         // After the command line gets the initial character, force an update
         // (needed to handle single-character aliases)
         setTimeout(function() {
-            self.command($commandLine.val());
-            self.command.valueHasMutated();
+            self.commandLine($commandLine.val());
+            self.commandLine.valueHasMutated();
         }, 0);
     });
 };
@@ -45,7 +56,7 @@ CommandLineViewModel.prototype.applyAliases = function(command) {
     return command;
 };
 CommandLineViewModel.prototype.call = function() {
-    var command = this.applyAliases(this.command());
+    var command = this.command();
     this.command('');
     if (this[command]) return this[command]();
 };
@@ -53,39 +64,31 @@ CommandLineViewModel.prototype.commit = function() {
     this.path.repository().staging.commitMessageTitleFocused(true);
 };
 CommandLineViewModel.prototype.push = function() {
-    var graph = this.path.repository().graph;
-    if (!graph.currentActionContext()) {
-        graph.checkedOutRef().hasFocus(true);
-    }
-    // TODO: get the push actions using filter
-    this.path.repository().graph.checkedOutRef().node().dropareaGraphActions[3].doPerform();
+    if (this.graph()) this.graph().checkedOutRef().node().dropareaGraphActions[3].doPerform();
 };
 CommandLineViewModel.prototype.show = function(command) {
     var repository = this.path.repository(),
-        graph;
-    if (!repository) return false;
-    graph = repository.graph;
-    if (!graph.checkedOutRef()) return false;
-    if (!graph.currentActionContext()) {
-        graph.checkedOutRef().selected(true);
-    }
-    command = this.applyAliases(this.command());
+        graph = this.graph(),
+        shouldShow = true;
 
-    if (this.show[command]) {
-        this.show[command].call(this);
-    } else {
+    if (!repository || !graph || !graph.checkedOutRef) shouldShow = false;
+    if (!this.check(command)) shouldShow = false;
+
+    if (shouldShow && this.show[command]) {
+        shouldShow = this.show[command].call(this);
+    } else if (!shouldShow) {
         graph.hoverGraphAction(null);
     }
-
-    return true;
 };
 CommandLineViewModel.prototype.show.push = function() {
-    // TODO: don't do anything if can't push
-    var graph = this.path.repository().graph,
-                push = graph.currentActionContext().node().dropareaGraphActions[3];
-    if (this.check.push.call(this)) graph.hoverGraphAction(push);
+    var push = this.currentActionContext().node().dropareaGraphActions[3];
+    this.graph().hoverGraphAction(push);
 };
-CommandLineViewModel.prototype.check = {};
+CommandLineViewModel.prototype.check = function(command) {
+    if (!(command in this)) return false;
+    return this.check[command].call(this);
+};
+CommandLineViewModel.prototype.check.commit = function() { return true; };
 CommandLineViewModel.prototype.check.push = function() {
-    return this.path.repository().graph.currentActionContext().node().dropareaGraphActions[3].visible();
+    return this.currentActionContext() && this.currentActionContext().node().dropareaGraphActions[3].visible();
 };
