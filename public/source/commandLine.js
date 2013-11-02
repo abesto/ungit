@@ -1,5 +1,6 @@
 var ko = require('../vendor/js/knockout-2.2.1');
 var $ = require('../vendor/js/jquery-2.0.0.min');
+var GraphActions = require('./git-graph-actions');
 
 
 // Will be loaded from config
@@ -55,6 +56,16 @@ CommandLineViewModel.prototype.applyAliases = function(command) {
     }
     return command;
 };
+CommandLineViewModel.prototype.graphAction = function(clazz) {
+    var list;
+    if (!this.currentActionContext()) return null;
+    list = this.graph().checkedOutRef().node().dropareaGraphActions.filter(function(action) {
+        return (action instanceof clazz);
+    });
+    if (list.length === 0) return null;
+    if (list.length > 1) throw new Exception("More than one GraphAction of the same class found. I'm confused.");
+    return list[0];
+};
 CommandLineViewModel.prototype.call = function() {
     var command = this.command();
     this.command('');
@@ -64,7 +75,7 @@ CommandLineViewModel.prototype.commit = function() {
     this.path.repository().staging.commitMessageTitleFocused(true);
 };
 CommandLineViewModel.prototype.push = function() {
-    if (this.graph()) this.graph().checkedOutRef().node().dropareaGraphActions[3].doPerform();
+    this.graphAction(GraphActions.Push).doPerform();
 };
 CommandLineViewModel.prototype.show = function(command) {
     var repository = this.path.repository(),
@@ -81,8 +92,7 @@ CommandLineViewModel.prototype.show = function(command) {
     }
 };
 CommandLineViewModel.prototype.show.push = function() {
-    var push = this.currentActionContext().node().dropareaGraphActions[3];
-    this.graph().hoverGraphAction(push);
+    this.graph().hoverGraphAction(this.graphAction(GraphActions.Push));
 };
 CommandLineViewModel.prototype.check = function(command) {
     if (!(command in this)) return false;
