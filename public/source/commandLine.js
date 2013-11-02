@@ -100,5 +100,6 @@ CommandLineViewModel.prototype.check = function(command) {
 };
 CommandLineViewModel.prototype.check.commit = function() { return true; };
 CommandLineViewModel.prototype.check.push = function() {
-    return this.currentActionContext() && this.currentActionContext().node().dropareaGraphActions[3].visible();
+    var push = this.graphAction(GraphActions.Push);
+    return push && push.visible();
 };
